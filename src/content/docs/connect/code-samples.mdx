@@ -1,0 +1,30 @@
+---
+title: Παραδείγματα κώδικα
+description: Πώς να καλέσετε το POST /v1/invitations σε cURL, PHP, Node.js, Python, Java και Go.
+---
+
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+import { invitationSnippet, SNIPPET_LANGS } from '../../../lib/snippets';
+
+export const highlight = { curl: 'bash', php: 'php', node: 'js', python: 'python', java: 'java', go: 'go' };
+
+Κάθε παράδειγμα στέλνει μία πρόσκληση και τυπώνει την απάντηση. Αντικαταστήστε το `ΤΟ_ΚΛΕΙΔΙ_ΣΑΣ` με το κλειδί σας. **Ξεκινήστε με το [κλειδί δοκιμής](/connect/get-started/#test-key)**: θα πάρετε `202` και `"test": true`, χωρίς να σταλεί κανένα email.
+
+Η γλώσσα που επιλέγετε παραμένει επιλεγμένη σε όλες τις σελίδες.
+
+<Tabs syncKey="lang">
+  {SNIPPET_LANGS.map((l) => (
+    <TabItem label={l.label}>
+      <Code code={invitationSnippet(l.id)} lang={highlight[l.id]} />
+    </TabItem>
+  ))}
+</Tabs>
+
+Τα στοιχεία (`pelatis@example.gr`, `Μαρία`, `1001`) είναι φανταστικά. Στείλτε τα δικά σας.
+
+## Τι να προσέξετε {#things-to-note}
+
+- **Καλέστε το αφού ολοκληρωθεί η παραγγελία**, και μην αφήνετε ένα σφάλμα ή μια αργή απάντηση να σταματήσει την παραγγελία του πελάτη. Όλα τα παραδείγματα έχουν χρονικό όριο 10 δευτερολέπτων.
+- **Το κλειδί μένει στον server.** Ποτέ σε κώδικα που τρέχει στον περιηγητή του πελάτη.
+- **Η επανάληψη είναι ασφαλής:** η ίδια παραγγελία δεν στέλνεται δύο φορές.
+- Για τους κωδικούς της απάντησης, δείτε τις [απαντήσεις και τα σφάλματα](/connect/responses-and-errors/).

@@ -1,0 +1,236 @@
+---
+// One endpoint of the public API, in the page's own column like any guide: what it does, the parameters, the request in your language and
+// the answers. Everything but the examples of the answers is
+// read from the spec (src/data/invitations.openapi.yaml, made by `npm run sync:openapi`), so it cannot say what the API does not.
+import { readFileSync } from 'node:fs';
+import { parse } from 'yaml';
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+import { invitationSnippet, SNIPPET_LANGS } from '../lib/snippets';
+import { localizeSample } from '../lib/samples';
+import { useT } from '../i18n';
+import { anchors, pageHref } from '../lib/links';
+
+interface Props {
+  path: string;
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete';
+}
+const { path, method } = Astro.props;
+const locale = Astro.locals.starlightRoute?.locale;
+const t = useT(locale);
+
+const spec = parse(readFileSync('src/data/invitations.openapi.yaml', 'utf8'));
+const server: string = spec.servers[0].url;
+
+// Where a text is in the spec, as the keys of src/data/invitations.openapi.en.yaml write it.
+type Pointer = string[];
+// A part of the spec: untyped, since the YAML is read as it is.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SpecNode = any;
+const node = (ptr: Pointer): SpecNode => ptr.reduce((n: SpecNode, k) => n?.[k], spec);
+// `$ref`s of the spec point inside it (#/components/...): the pointer of what they point at.
+const follow = (ptr: Pointer): Pointer => {
+  const n = node(ptr);
+  return n?.$ref ? follow(n.$ref.replace('#/', '').split('/')) : ptr;
+};
+
+// The texts of the spec are Greek. In another language each one is replaced by its translation from the overlay, and the build
+// fails when the overlay does not match the spec: a text that is shown but has no translation, a translation of a Greek text that
+// has changed since, and a translation of a text that is not shown any more.
+const overlay: Record<string, { el: string; en: string }> = parse(readFileSync('src/data/invitations.openapi.en.yaml', 'utf8'));
+const shownTexts = new Map<string, string>();
+const text = (ptr: Pointer): string | undefined => {
+  const greek = node(ptr);
+  if (typeof greek !== 'string') return undefined;
+  const key = ptr.join(' > ');
+  shownTexts.set(key, greek.trim());
+  return locale === 'en' ? (overlay[key]?.en ?? greek) : greek;
+};
+
+const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// The descriptions of the spec use two bits of Markdown: **bold** and `code`.
+const inline = (s: string) => escape(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`(.+?)`/g, '<code>$1</code>');
+
+const opPtr: Pointer = ['paths', path, method];
+const op = node(opPtr);
+const paragraphs: string[] = (text([...opPtr, 'description']) ?? '').split(/\n\s*\n/);
+
+const fields = (schemaPtr?: Pointer) => {
+  if (!schemaPtr) return [];
+  const ptr = follow(schemaPtr);
+  const schema = node(ptr);
+  return Object.entries<SpecNode>(schema?.properties ?? {}).map(([name, p]) => ({
+    name,
+    required: (schema.required ?? []).includes(name),
+    type: p.type ?? (p.enum || p.const !== undefined ? 'string' : 'object'),
+    format: p.format as string | undefined,
+    max: p.maxLength as number | undefined,
+    values: (p.enum ?? (p.const !== undefined ? [p.const] : [])) as string[],
+    text: text([...ptr, 'properties', name, 'description']),
+  }));
+};
+
+const jsonSchema = (ptr: Pointer): Pointer | undefined =>
+  node([...ptr, 'content', 'application/json', 'schema']) ? [...ptr, 'content', 'application/json', 'schema'] : undefined;
+
+const body = fields(jsonSchema([...opPtr, 'requestBody']));
+
+const securityName = Object.keys(op.security?.[0] ?? {})[0];
+const headers = [
+  { name: 'Authorization', value: `Bearer ${t.api.keyPlaceholder}`, text: text(['components', 'securitySchemes', securityName, 'description']) },
+  { name: 'Content-Type', value: 'application/json', text: t.api.contentType },
+];
+
+const responses = Object.keys(op.responses).map((code) => {
+  const ptr = follow([...opPtr, 'responses', code]);
+  return { code, ok: code.startsWith('2'), text: text([...ptr, 'description']) ?? '', fields: fields(jsonSchema(ptr)) };
+});
+
+if (locale === 'en') {
+  const problems = [
+    ...[...shownTexts].filter(([k]) => !overlay[k]).map(([k]) => `no English for: ${k}`),
+    ...[...shownTexts].filter(([k, greek]) => overlay[k] && overlay[k].el.trim() !== greek).map(([k]) => `the Greek text changed since it was translated: ${k}`),
+    ...Object.keys(overlay).filter((k) => !shownTexts.has(k)).map((k) => `not shown any more: ${k}`),
+  ];
+  if (problems.length) {
+    throw new Error(`src/data/invitations.openapi.en.yaml does not match the spec:\n  ${problems.join('\n  ')}`);
+  }
+}
+
+// The answers the developer will see, as JSON. The shapes are in the spec; these are the values of a typical call.
+const examples: Record<string, unknown> = {
+  '202': { state: 'queued' },
+  '200': { state: 'skipped', reason: 'duplicate' },
+  '422': { error: 'validation_failed', field: 'email', message: t.api.exampleInvalidEmail },
+};
+
+const highlight = { curl: 'bash', php: 'php', node: 'js', python: 'python', java: 'java', go: 'go' } as const;
+const url = server + path;
+---
+
+<div class="api">
+  <p class="endpoint">
+    <span class="verb">{method.toUpperCase()}</span>
+    <code>{url}</code>
+    <button type="button" class="copy" data-copy={url} aria-label={t.api.copyLabel} data-done={t.api.copied}>{t.api.copy}</button>
+  </p>
+
+  {paragraphs.map((p) => <p set:html={inline(p)} />)}
+
+  <h2 id="parameters">{t.api.parameters}</h2>
+
+  <h3 id="headers">{t.api.headers}</h3>
+  <ul class="fields">
+    {
+      headers.map((h) => (
+        <li>
+          <div class="head">
+            <code class="name">{h.name}</code> <span class="type">string</span> <span class="req">{t.api.required}</span>
+          </div>
+          <p><code>{h.value}</code></p>
+          {h.text && <p class="text" set:html={inline(h.text)} />}
+        </li>
+      ))
+    }
+  </ul>
+
+  <h3 id="body">{t.api.body}</h3>
+  <ul class="fields">
+    {
+      body.map((f) => (
+        <li>
+          <div class="head">
+            <code class="name">{f.name}</code> <span class="type">{f.type}</span>
+            {f.format && <span class="chip">{f.format}</span>}
+            {f.max && <span class="chip">{t.api.maxChars(f.max)}</span>}
+            {f.required && <span class="req">{t.api.required}</span>}
+          </div>
+          {f.text && <p class="text" set:html={inline(f.text)} />}
+        </li>
+      ))
+    }
+  </ul>
+
+  <h2 id="example">{t.api.exampleRequest}</h2>
+  <Tabs syncKey="lang">
+    {
+      SNIPPET_LANGS.map((l) => (
+        <TabItem label={l.label}>
+          <Code code={localizeSample(invitationSnippet(l.id, undefined, t.api.keyPlaceholder), locale)} lang={highlight[l.id]} />
+        </TabItem>
+      ))
+    }
+  </Tabs>
+  <p>
+    {t.api.keyNote.before}<code>{t.api.keyPlaceholder}</code>{t.api.keyNote.after}<a href={pageHref('getStarted', locale, anchors.testKey)}>{t.api.keyNote.link}</a>{t.api.keyNote.end}
+  </p>
+
+  <h2 id="responses">{t.api.responses}</h2>
+  {
+    responses.map((r) => (
+      <section class="res">
+        <h3 id={`response-${r.code}`}>
+          <span class:list={['dot', r.ok ? 'ok' : 'err']} aria-hidden="true" />
+          <code>{r.code}</code>
+        </h3>
+        <p set:html={inline(r.text)} />
+        {r.fields.length > 0 && (
+          <ul class="fields">
+            {r.fields.map((f) => (
+              <li>
+                <div class="head">
+                  <code class="name">{f.name}</code> <span class="type">{f.type}</span>
+                  {f.values.map((v) => <span class="chip">{v}</span>)}
+                </div>
+                {f.text && <p class="text" set:html={inline(f.text)} />}
+              </li>
+            ))}
+          </ul>
+        )}
+        {r.code in examples && <Code code={JSON.stringify(examples[r.code], null, 2)} lang="json" title={t.api.exampleResponse} />}
+      </section>
+    ))
+  }
+  <p>{t.api.whatToDo.before}<a href={pageHref('responsesAndErrors', locale)}>{t.api.whatToDo.link}</a>{t.api.whatToDo.after}</p>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('button[data-copy]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.copy ?? '');
+        const label = b.textContent;
+        b.textContent = b.dataset.done ?? label;
+        setTimeout(() => (b.textContent = label), 1600);
+      } catch {
+        /* The browser refused (an old one, or no permission): the URL is selectable text next to it. */
+      }
+    }),
+  );
+</script>
+
+<style>
+  .endpoint { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--sl-color-hairline); border-radius: 0.5rem; background: var(--sl-color-bg-nav); }
+  .verb { padding: 0.1rem 0.55rem; border-radius: 999px; background: var(--sl-color-accent); color: #fff; font-size: var(--sl-text-xs); font-weight: 700; letter-spacing: 0.02em; }
+  .endpoint code { flex: 1; min-width: 0; overflow-wrap: anywhere; background: none; padding: 0; font-size: var(--sl-text-sm); }
+  .copy { border: 1px solid var(--sl-color-gray-5); border-radius: 0.4rem; background: transparent; color: var(--sl-color-gray-2); font: inherit; font-size: var(--sl-text-xs); padding: 0.15rem 0.55rem; cursor: pointer; }
+  .copy:hover { border-color: var(--sl-color-accent); color: var(--sl-color-white); }
+
+  /* The parameters and the fields of an answer: a name, its type and a line, separated by a rule. */
+  .fields { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+  .fields > li, .fields > li + li { margin: 0; padding: 0.7rem 0; border-top: 1px solid var(--sl-color-hairline); }
+  .fields > li:last-child { border-bottom: 1px solid var(--sl-color-hairline); }
+  .fields p, .fields .head { margin: 0; }
+  .fields .head + p { margin-top: 0.25rem; }
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+  .name { font-weight: 700; font-size: var(--sl-text-base); color: var(--sl-color-white); background: none; padding: 0; }
+  .type { font-size: var(--sl-text-sm); color: var(--sl-color-gray-3); }
+  .req { font-size: var(--sl-text-sm); color: var(--sl-color-red); }
+  .chip { padding: 0 0.45rem; border: 1px solid var(--sl-color-gray-5); border-radius: 0.3rem; font-size: var(--sl-text-xs); color: var(--sl-color-gray-2); }
+  .text { color: var(--sl-color-gray-2); }
+
+  .res h3 { display: flex; align-items: center; gap: 0.5rem; }
+  .res h3 code { background: none; padding: 0; font-size: inherit; }
+  .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; }
+  .dot.ok { background: var(--sl-color-green); }
+  .dot.err { background: var(--sl-color-orange); }
+</style>

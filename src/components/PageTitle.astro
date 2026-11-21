@@ -1,0 +1,39 @@
+---
+// The title of a guide: the section it belongs to (a link back, with the icon of the home page), the title, and the reading time.
+// On the home page the title is hidden: the hero has its own.
+import { sections, sectionOf } from '../lib/sections';
+import { useT } from '../i18n';
+import { pageHref } from '../lib/links';
+
+const { id, entry, locale } = Astro.locals.starlightRoute;
+const t = useT(locale);
+// The id of a page in another language starts with the language (en/connect/get-started).
+const slug = locale ? id.replace(new RegExp(`^${locale}/`), '') : id;
+const key = sectionOf(slug) ?? '';
+const section = sections[key];
+const isHome = slug === '' || slug === 'index';
+const isReference = slug.startsWith('api/');
+
+// About 180 words a minute. The API page has no text of its own (it is made from the spec), so it gets no time.
+const words = (entry.body ?? '').split(/\s+/).filter(Boolean).length;
+const minutes = Math.max(1, Math.round(words / 180));
+---
+
+{
+  section && !isHome && (
+    <a class="crumb" href={pageHref(section.page, locale)}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d={section.icon} /></svg>
+      {t.sections[key as keyof typeof t.sections].title}
+    </a>
+  )
+}
+<h1 id="_top">{entry.data.title}</h1>
+{words > 0 && !isHome && !isReference && <p class="meta">{t.page.readingTime(minutes)}</p>}
+
+<style>
+  .crumb { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--sl-color-gray-3); font-size: var(--sl-text-sm); text-decoration: none; }
+  .crumb:hover { color: var(--sl-color-accent-high); text-decoration: underline; }
+  .crumb svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  h1 { margin-top: 0.4rem; font-size: var(--sl-text-3xl); line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; color: var(--sl-color-white); }
+  .meta { margin-top: 0.4rem; font-size: var(--sl-text-xs); color: var(--sl-color-gray-3); }
+</style>

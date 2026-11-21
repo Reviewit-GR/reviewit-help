@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.sh text eol=lf
+# Generated, not for review diffs
+src/data/invitations.openapi.yaml linguist-generated=true
+package-lock.json -diff

@@ -1,0 +1,67 @@
+name: Checks
+
+# The shared workflows of the organisation are private, and a public repository cannot call them: the steps are written out here.
+# Only changes that can affect the checks start them (not the README, Dependabot settings, ...).
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'astro.config.mjs'
+      - 'eslint.config.js'
+      - 'tsconfig.json'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'astro.config.mjs'
+      - 'eslint.config.js'
+      - 'tsconfig.json'
+      - '.github/workflows/**'
+
+# A newer push to the same pull request replaces the run in progress (it would be thrown away anyway); main is never cancelled.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Nothing here needs a secret, and a pull request from a fork gets none.
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Type check, lint, tests, build and links
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Type check of the pages and components
+        run: npm run check
+      - name: ESLint (the accessibility rules included)
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      # The build fails when the English text of the API page does not match the spec.
+      - name: Build
+        run: npm run build
+      - name: Every link and #anchor of the built site
+        run: npm run check:links
+      - name: Audit the dependencies
+        run: npm audit --omit=dev --audit-level=high

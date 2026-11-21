@@ -1,0 +1,31 @@
+---
+title: Code samples
+description: "How to call POST /v1/invitations in cURL, PHP, Node.js, Python, Java and Go."
+---
+
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+import { invitationSnippet, SNIPPET_LANGS } from '../../../../lib/snippets';
+import { localizeSample } from '../../../../lib/samples';
+
+export const highlight = { curl: 'bash', php: 'php', node: 'js', python: 'python', java: 'java', go: 'go' };
+
+Every sample sends one invitation and prints the response. Replace `YOUR_API_KEY` with your key. **Start with the [test key](/en/connect/get-started/#test-key)**: you will get `202` and `"test": true`, and no email is sent.
+
+The language you choose stays chosen on all the pages.
+
+<Tabs syncKey="lang">
+  {SNIPPET_LANGS.map((l) => (
+    <TabItem label={l.label}>
+      <Code code={localizeSample(invitationSnippet(l.id, undefined, 'YOUR_API_KEY'), 'en')} lang={highlight[l.id]} />
+    </TabItem>
+  ))}
+</Tabs>
+
+The details (`customer@example.gr`, `Maria`, `1001`) are made up. Send your own.
+
+## Things to note {#things-to-note}
+
+- **Call it after the order is completed**, and do not let an error or a slow answer stop the customer's order. All the samples have a time limit of 10 seconds.
+- **The key stays on the server.** Never in code that runs in the customer's browser.
+- **Retrying is safe:** the same order is not sent twice.
+- For the response codes, see [responses and errors](/en/connect/responses-and-errors/).

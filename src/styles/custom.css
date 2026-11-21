@@ -1,0 +1,65 @@
+/* The colours and the typeface of reviewit.gr (reviewit-web, src/layouts/Base.astro), put into Starlight's variables. */
+:root {
+  --sl-font: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  --sl-content-width: 46rem;
+  /* Smaller than Starlight's: 15px text, and headings that do not shout. */
+  --sl-text-base: 0.9375rem;
+  --sl-text-sm: 0.8125rem;
+  --sl-text-xs: 0.75rem;
+  --sl-text-lg: 1.0625rem;
+  --sl-text-xl: 1.1875rem;
+  --sl-text-2xl: 1.375rem;
+  --sl-text-3xl: 1.625rem;
+  --sl-text-4xl: 1.875rem;
+}
+/* Dark is Starlight's default set of variables. */
+:root {
+  --sl-color-accent-low: #06312f;
+  --sl-color-accent: #007571;
+  --sl-color-accent-high: #7fdcd8;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #e8f3f0;
+  --sl-color-accent: #007571;
+  --sl-color-accent-high: #06312f;
+}
+/* The tabs of the code samples: the chosen language stays chosen on every page. */
+starlight-tabs .tab > [role='tab'] { font-weight: 600; }
+
+/* The home page has its own page title (the h1 of the hero) and needs more room than a guide. */
+body:has(.home) .content-panel:has(#_top) { display: none; }
+body:has(.home) { --sl-content-width: 60rem; }
+body:has(.home) footer .meta { display: none; }
+
+/* The guides. The headings are smaller than Starlight's, so a page reads as steps, not as a stack of titles. */
+.sl-markdown-content :is(h2, h3, h4):not(:where(.not-content *)) { font-weight: 700; letter-spacing: -0.008em; }
+.sl-markdown-content h2:not(:where(.not-content *)) { font-size: var(--sl-text-xl); margin-top: 2rem; }
+.sl-markdown-content h3:not(:where(.not-content *)) { font-size: var(--sl-text-lg); }
+/* Six languages do not fit in a row on a phone: they wrap instead of hiding Java and Go behind a scroll. */
+starlight-tabs [role='tablist'] { flex-wrap: wrap; }
+
+/* The notes are green like the rest of the site, not Starlight's blue. The tip, caution and danger keep their own colours. */
+.starlight-aside--note {
+  border-color: var(--sl-color-accent);
+  background-color: var(--sl-color-accent-low);
+  --sl-color-asides-text-accent: var(--sl-color-accent-high);
+}
+
+/* The sidebar: the page you are on is a tinted row, not a solid block. */
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover {
+  background-color: var(--sl-color-accent-low);
+  color: var(--sl-color-accent-high);
+  font-weight: 600;
+}
+.sidebar-content .large { font-size: var(--sl-text-sm); font-weight: 600; }
+
+/* The tables of the answers and the errors. */
+.sl-markdown-content table:not(:where(.not-content *)) { display: table; width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid var(--sl-color-hairline); border-radius: 0.6rem; overflow: hidden; }
+.sl-markdown-content :is(th, td):not(:where(.not-content *)) { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--sl-color-hairline); }
+.sl-markdown-content tr:last-child td:not(:where(.not-content *)) { border-bottom: 0; }
+.sl-markdown-content th:not(:where(.not-content *)) { background: var(--sl-color-accent-low); color: var(--sl-color-accent-high); font-weight: 600; text-align: start; }
+
+/* Previous and next page. */
+.pagination-links a:hover { border-color: var(--sl-color-accent); }
+

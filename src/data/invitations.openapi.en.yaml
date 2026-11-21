@@ -1,0 +1,54 @@
+# The English of the API page: for each text of the spec (src/data/invitations.openapi.yaml, in Greek) that the page shows,
+# `el` is the Greek it was translated from and `en` the translation. The key says where the text is in the spec.
+# The build fails when the Greek of the spec no longer matches `el` (the text changed: translate it again and copy the new Greek here),
+# when a shown text has no entry, and when an entry is for a text that is not shown any more.
+paths > /v1/invitations > post > description:
+  el: |-
+    Ταυτοποίηση με το **κλειδί API** της επιχείρησης (`Authorization: Bearer rvk_...`), όχι με συνεδρία. Με το **κλειδί δοκιμής** (`rvk_test_...`) η απάντηση είναι η ίδια, με `test: true`, αλλά τίποτα δεν αποθηκεύεται, δεν στέλνεται και δεν μετράει στο όριο.
+
+    Στείλτε μόνο το email του πελάτη, το μικρό του όνομα (προαιρετικό) και τον αριθμό παραγγελίας. Το email στέλνεται μετά την καθυστέρηση που έχει ορίσει η επιχείρηση (24 ώρες από προεπιλογή) και η διεύθυνση σβήνεται μόλις σταλεί, το αργότερο σε 30 ημέρες. Η ίδια παραγγελία δεν στέλνεται δύο φορές, οπότε η επανάληψη μιας κλήσης είναι ασφαλής.
+
+    Αν η παραγγελία ή ο πελάτης έχει ήδη προσκληθεί (από την ίδια επιχείρηση τις τελευταίες 90 ημέρες), η απάντηση είναι `200` με `state: skipped` και `reason` (`duplicate`, `repeat`). Δεν στέλνεται τίποτα σε όποιον έχει ζητήσει να μη λαμβάνει προσκλήσεις (από οποιαδήποτε επιχείρηση) ή έχει ήδη γράψει κριτική για την επιχείρηση, αλλά η απάντηση είναι η ίδια `202` με μια κανονική πρόσκληση: δεν λέμε σε καμία επιχείρηση ποιος έχει γράψει κριτική ή έχει διαγραφεί από τη λίστα.
+
+    Η επιχείρηση πρέπει να έχει ενεργοποιήσει τις προσκλήσεις και να έχει επιβεβαιώσει ότι ενημερώνει τους πελάτες της (403 `invitations_disabled`), να έχει πλάνο (403 `plan_required`) και να μην έχει συμπληρωθεί το μηνιαίο όριο του πλάνου της (429 `monthly_limit`: Basic 300, Pro 1000, Premium 5000, Enterprise χωρίς όριο).
+  en: |-
+    Authenticate with the business's **API key** (`Authorization: Bearer rvk_...`), not with a session. With the **test key** (`rvk_test_...`) the response is the same, with `test: true`, but nothing is stored, sent or counted against the limit.
+
+    Send only the customer's email, their first name (optional) and the order number. The email is sent after the delay the business has set (24 hours by default) and the address is deleted as soon as it is sent, at the latest within 30 days. The same order is not sent twice, so retrying a call is safe.
+
+    If the order or the customer has already been invited (by the same business in the last 90 days), the response is `200` with `state: skipped` and a `reason` (`duplicate`, `repeat`). Nothing is sent to anyone who has asked not to receive invitations (from any business) or who has already written a review of the business, but the response is the same `202` as for a real invitation: no business is told who has reviewed it or opted out.
+
+    The business must have turned on invitations and confirmed that it tells its customers (403 `invitations_disabled`), have a plan (403 `plan_required`), and not have reached its plan's monthly limit (429 `monthly_limit`: Basic 300, Pro 1000, Premium 5000, Enterprise no limit).
+components > securitySchemes > companyKey > description:
+  el: Το κλειδί API της επιχείρησης (rvk_...), που δημιουργεί ο ιδιοκτήτης στη σελίδα «Η επιχείρησή μου»
+  en: The business's API key (rvk_...), which the owner creates on the «My business» page
+paths > /v1/invitations > post > requestBody > content > application/json > schema > properties > email > description:
+  el: Το email του πελάτη
+  en: The customer's email
+paths > /v1/invitations > post > requestBody > content > application/json > schema > properties > firstName > description:
+  el: Το μικρό όνομα του πελάτη (προαιρετικό)
+  en: The customer's first name (optional)
+paths > /v1/invitations > post > requestBody > content > application/json > schema > properties > orderRef > description:
+  el: "Ο αριθμός παραγγελίας του καταστήματός σας: μία πρόσκληση ανά παραγγελία"
+  en: "Your shop's order number: one invitation per order"
+paths > /v1/invitations > post > responses > 200 > description:
+  el: "Δεν θα σταλεί τίποτα (`skipped`): η παραγγελία ή ο πελάτης έχει ήδη προσκληθεί"
+  en: "Nothing will be sent (`skipped`): the order or the customer has already been invited"
+paths > /v1/invitations > post > responses > 202 > description:
+  el: Η πρόσκληση μπήκε στη σειρά για αποστολή
+  en: The invitation was queued for sending
+paths > /v1/invitations > post > responses > 202 > content > application/json > schema > properties > test > description:
+  el: "Μόνο με το κλειδί δοκιμής: δεν μπήκε τίποτα στη σειρά"
+  en: "Only with the test key: nothing was queued"
+paths > /v1/invitations > post > responses > 401 > description:
+  el: Λείπει ή είναι λάθος το κλειδί API
+  en: The API key is missing or wrong
+paths > /v1/invitations > post > responses > 403 > description:
+  el: "`invitations_disabled` ή `plan_required`"
+  en: "`invitations_disabled` or `plan_required`"
+paths > /v1/invitations > post > responses > 429 > description:
+  el: "`monthly_limit`: συμπληρώθηκε το μηνιαίο όριο του πλάνου"
+  en: "`monthly_limit`: the plan's monthly limit has been reached"
+components > responses > Invalid > description:
+  el: "Μη έγκυρο πεδίο: `validation_failed`, με το `field` και ένα `message`"
+  en: "Invalid field: `validation_failed`, with the `field` and a `message`"

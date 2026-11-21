@@ -1,0 +1,25 @@
+name: Problem with a page
+description: Something is wrong, unclear or missing in a guide
+labels: [documentation]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Address of the page
+      placeholder: https://help.reviewit.gr/connect/get-started/
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options: [Ελληνικά, English]
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong, unclear or missing?
+      description: Please do not paste real customer details or keys.
+    validations:
+      required: true
