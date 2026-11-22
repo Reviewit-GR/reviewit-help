@@ -26,6 +26,7 @@ If the customer has already written a review of your business or has asked not t
 | `403` | `plan_required` | The business has no active plan. |
 | `422` | `validation_failed` | A field is not valid. `field` says which: `email`, `firstName` (up to 80 characters) or `orderRef` (required, up to 100 characters). |
 | `429` | `monthly_limit` | The monthly limit of your plan has been reached. Try again next month or upgrade your plan. |
+| `429` | `rate_limited` | You sent more than 600 calls in a minute. Nothing was done and the call was not logged. Wait the number of seconds in the `Retry-After` header (60) and send it again. |
 | `500` | `internal_error` | An error on our side. Try again in a moment. Retrying is safe. |
 
 The body of an error is `{"error": "<code>"}`. For `422` it also has `field` and `message`.
