@@ -10,7 +10,7 @@ paths > /v1/invitations > post > description:
 
     Αν η παραγγελία ή ο πελάτης έχει ήδη προσκληθεί (από την ίδια επιχείρηση τις τελευταίες 90 ημέρες), η απάντηση είναι `200` με `state: skipped` και `reason` (`duplicate`, `repeat`). Δεν στέλνεται τίποτα σε όποιον έχει ζητήσει να μη λαμβάνει προσκλήσεις (από οποιαδήποτε επιχείρηση) ή έχει ήδη γράψει κριτική για την επιχείρηση, αλλά η απάντηση είναι η ίδια `202` με μια κανονική πρόσκληση: δεν λέμε σε καμία επιχείρηση ποιος έχει γράψει κριτική ή έχει διαγραφεί από τη λίστα.
 
-    Η επιχείρηση πρέπει να έχει ενεργοποιήσει τις προσκλήσεις και να έχει επιβεβαιώσει ότι ενημερώνει τους πελάτες της (403 `invitations_disabled`), να έχει πλάνο (403 `plan_required`) και να μην έχει συμπληρωθεί το μηνιαίο όριο του πλάνου της (429 `monthly_limit`: Basic 300, Pro 1000, Premium 5000, Enterprise χωρίς όριο).
+    Η επιχείρηση πρέπει να έχει ενεργοποιήσει τις προσκλήσεις και να έχει επιβεβαιώσει ότι ενημερώνει τους πελάτες της (403 `invitations_disabled`), να έχει πλάνο (403 `plan_required`) και να μην έχει συμπληρωθεί το μηνιαίο όριο του πλάνου της (429 `monthly_limit`: Basic 300, Pro 1000, Premium 5000, Enterprise χωρίς όριο). Πάνω από 600 κλήσεις μέσα σε ένα λεπτό με τα κλειδιά της επιχείρησης (κανονικό και δοκιμής μαζί) απαντώνται με 429 `rate_limited` και κεφαλίδα `Retry-After` (60 δευτερόλεπτα): δεν έγινε τίποτα και η κλήση δεν υπάρχει στο αρχείο κλήσεων, οπότε στείλτε την ξανά αργότερα.
   en: |-
     Authenticate with the business's **API key** (`Authorization: Bearer rvk_...`), not with a session. With the **test key** (`rvk_test_...`) the response is the same, with `test: true`, but nothing is stored, sent or counted against the limit.
 
@@ -18,7 +18,7 @@ paths > /v1/invitations > post > description:
 
     If the order or the customer has already been invited (by the same business in the last 90 days), the response is `200` with `state: skipped` and a `reason` (`duplicate`, `repeat`). Nothing is sent to anyone who has asked not to receive invitations (from any business) or who has already written a review of the business, but the response is the same `202` as for a real invitation: no business is told who has reviewed it or opted out.
 
-    The business must have turned on invitations and confirmed that it tells its customers (403 `invitations_disabled`), have a plan (403 `plan_required`), and not have reached its plan's monthly limit (429 `monthly_limit`: Basic 300, Pro 1000, Premium 5000, Enterprise no limit).
+    The business must have turned on invitations and confirmed that it tells its customers (403 `invitations_disabled`), have a plan (403 `plan_required`), and not have reached its plan's monthly limit (429 `monthly_limit`: Basic 300, Pro 1000, Premium 5000, Enterprise no limit). More than 600 calls in a minute with the business's keys (live and test together) are answered with 429 `rate_limited` and a `Retry-After` header (60 seconds): nothing was done and the call is not in the call log, so send it again later.
 components > securitySchemes > companyKey > description:
   el: Το κλειδί API της επιχείρησης (rvk_...), που δημιουργεί ο ιδιοκτήτης στη σελίδα «Η επιχείρησή μου»
   en: The business's API key (rvk_...), which the owner creates on the «My business» page
@@ -47,8 +47,8 @@ paths > /v1/invitations > post > responses > 403 > description:
   el: "`invitations_disabled` ή `plan_required`"
   en: "`invitations_disabled` or `plan_required`"
 paths > /v1/invitations > post > responses > 429 > description:
-  el: "`monthly_limit`: συμπληρώθηκε το μηνιαίο όριο του πλάνου"
-  en: "`monthly_limit`: the plan's monthly limit has been reached"
+  el: "`monthly_limit`: συμπληρώθηκε το μηνιαίο όριο του πλάνου. `rate_limited`: πάνω από 600 κλήσεις σε ένα λεπτό, ξαναδοκιμάστε μετά από `Retry-After` δευτερόλεπτα"
+  en: "`monthly_limit`: the plan's monthly limit has been reached. `rate_limited`: more than 600 calls in a minute, try again after `Retry-After` seconds"
 components > responses > Invalid > description:
   el: "Μη έγκυρο πεδίο: `validation_failed`, με το `field` και ένα `message`"
   en: "Invalid field: `validation_failed`, with the `field` and a `message`"
